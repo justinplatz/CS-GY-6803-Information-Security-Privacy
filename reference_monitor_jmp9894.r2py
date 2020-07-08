@@ -15,7 +15,6 @@ TARGET = "target"
 FUNC = "func"
 OBJC = "objc"
 
-
 class ABFile:
 
     def __init__(self, filename, create):
@@ -57,7 +56,17 @@ class ABFile:
                 # if cannot open a_file, exit
                 exitall()
     def writeat(self, data, offset):
+        # if offset is negative
         if offset < 0:
+            return
+
+        # if offset is greater than the len of the file
+        # Use locks during all read/write operations
+        mycontext['lock'].acquire(True)
+        b_file_content = self.b_file.readat(None, 0)
+        # lock release after reading
+        mycontext['lock'].release()
+        if offset > len(b_file_content):
             return
 
         # Use locks during all read/write operations
@@ -75,6 +84,7 @@ class ABFile:
         mycontext['lock'].acquire(True)
 
         try:
+            # Check that offset is not greater than the file length
             # Read from the a_file using the sandbox's readat...
             file_data = self.a_file.readat(bytes, offset)
             mycontext['lock'].release()
@@ -152,11 +162,9 @@ def filename_is_valid(filename):
     """
     if len(filename) > 120:
         return False
-    if not filename.isalnum():
-        return False
+    # if not filename.isalnum():
+    #     return False
     if not filename.islower():
-        return False
-    if len(filename) > 120:
         return False
     if filename == "." or filename == ".." or filename == "":
         return False
